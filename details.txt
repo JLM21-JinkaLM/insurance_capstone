@@ -1,0 +1,50 @@
+{
+  "username": "admin_user",
+  "email": "admin@insurance.com",
+  "password": "Admin@123",
+  "role": "ADMIN"
+}
+
+
+{
+  "username": "underwriter_user",
+  "email": "underwriter@insurance.com",
+  "password": "Underwriter@123",
+  "role": "UNDERWRITER"
+}
+
+
+
+{
+  "username": "claims_user",
+  "email": "claims@insurance.com",
+  "password": "Claims@123",
+  "role": "CLAIMS_ADJUSTER"
+}
+
+
+
+
+
+
+{
+  "username": "reinsurance_user",
+  "email": "reinsurance@insurance.com",
+  "password": "Reinsurance@123",
+  "role": "REINSURANCE_MANAGER"
+}
+
+
+
+//claim
+http://localhost:5000/api/claims/
+{
+  "claimNumber": "CLM-933",
+  "policyId": "699366ee0a92df5d6773999c",
+  "claimAmount": 700000,
+  "incidentDate": "2024-07-01",
+  "reportedDate": "2024-07-02",
+  "remarks": "Major surgery claim"
+}
+
+
