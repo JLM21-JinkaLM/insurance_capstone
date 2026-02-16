@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["UNDERWRITER", "CLAIMS_ADJUSTER", "REINSURANCE_ANALYST", "ADMIN"],
+      enum: ["UNDERWRITER", "CLAIMS_ADJUSTER", "REINSURANCE_MANAGER", "ADMIN"],
       required: true
     },
     permissions: [

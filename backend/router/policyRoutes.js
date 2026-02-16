@@ -8,7 +8,7 @@ const { authorize } = require("../middleware/roleMiddleware");
 router.post(
   "/",
   authenticate,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER","ADMIN"),
   ctrl.createPolicy
 );
 
@@ -16,6 +16,7 @@ router.post(
 router.get(
   "/",
   authenticate,
+  authorize("UNDERWRITER","ADMIN"),
   ctrl.getAllPolicies
 );
 
@@ -23,6 +24,7 @@ router.get(
 router.get(
   "/:id",
   authenticate,
+  authorize("UNDERWRITER","ADMIN"),
   ctrl.getPolicyById
 );
 
@@ -30,7 +32,7 @@ router.get(
 router.put(
   "/:id",
   authenticate,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER","ADMIN"),
   ctrl.updatePolicy
 );
 
@@ -46,7 +48,7 @@ router.delete(
 router.put(
   "/approve/:id",
   authenticate,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER","ADMIN"),
   ctrl.approvePolicy
 );
 
@@ -54,7 +56,7 @@ router.put(
 router.patch(
   "/status/:id",
   authenticate,
-  authorize("UNDERWRITER"),
+  authorize("UNDERWRITER",'ADMIN'),
   ctrl.changePolicyStatus
 );
 

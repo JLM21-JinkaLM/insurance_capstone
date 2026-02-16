@@ -1,4 +1,3 @@
-// models/Claim.js
 const mongoose = require("mongoose");
 
 const claimSchema = new mongoose.Schema(
@@ -21,6 +20,10 @@ const claimSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    settlementAmount: {
+      type: Number,
+      default: 0
+    },
     status: {
       type: String,
       enum: ["SUBMITTED", "IN_REVIEW", "APPROVED", "REJECTED", "SETTLED"],
@@ -32,7 +35,8 @@ const claimSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User"
     },
-    remarks: String
+    remarks: String,
+    settledAt: Date
   },
   { timestamps: true }
 );

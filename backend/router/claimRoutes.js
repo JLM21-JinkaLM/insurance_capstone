@@ -32,7 +32,7 @@ router.get(
 router.put(
   "/review/:id",
   authenticate,
-  authorize("CLAIMS_ADJUSTER"),
+  authorize("CLAIMS_ADJUSTER","ADMIN"),
   ctrl.reviewClaim
 );
 
@@ -40,7 +40,7 @@ router.put(
 router.put(
   "/approve/:id",
   authenticate,
-  authorize("CLAIMS_ADJUSTER"),
+  authorize("CLAIMS_ADJUSTER","ADMIN"),
   ctrl.approveClaim
 );
 
@@ -48,7 +48,7 @@ router.put(
 router.put(
   "/reject/:id",
   authenticate,
-  authorize("CLAIMS_ADJUSTER"),
+  authorize("CLAIMS_ADJUSTER","ADMIN"),
   ctrl.rejectClaim
 );
 
@@ -56,7 +56,7 @@ router.put(
 router.put(
   "/settle/:id",
   authenticate,
-  authorize("CLAIMS_ADJUSTER"),
+  authorize("CLAIMS_ADJUSTER","ADMIN"),
   ctrl.settleClaim
 );
 

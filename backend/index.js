@@ -14,6 +14,7 @@ app.use("/api/treaties", require("./router/treatyRoutes"));
 app.use("/api/reinsurers", require("./router/reinsurerRoutes"));
 app.use("/api/dashboard", require("./router/dashboardRoutes"));
 app.use("/api/risk-allocation",require("./router/riskAllocationRoutes"));
+app.use("/api/audit", require("./routes/auditRoutes"));
 
 app.get("/", (req, res) => {
   res.send("Server running");

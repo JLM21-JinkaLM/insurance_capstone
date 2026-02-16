@@ -8,7 +8,7 @@ const { authorize } = require("../middleware/roleMiddleware");
 router.post(
   "/",
   authenticate,
-  authorize("REINSURANCE_MANAGER"),
+  authorize("ADMIN","REINSURANCE_MANAGER"),
   ctrl.createAllocation
 );
 
@@ -32,7 +32,7 @@ router.get(
 router.put(
   "/:id",
   authenticate,
-  authorize("REINSURANCE_MANAGER"),
+  authorize("ADMIN","REINSURANCE_MANAGER"),
   ctrl.updateAllocation
 );
 
