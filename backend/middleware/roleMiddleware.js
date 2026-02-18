@@ -1,10 +1,11 @@
-exports.authorize = (...roles) => {
+const roleMiddleware = (roles = []) => {
   return (req, res, next) => {
-    if (req.user.role === "ADMIN") return next();
-
-    if (!roles.includes(req.user.role))
-      return res.status(403).json({ message: "Forbidden" });
-
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: 'Forbidden: Insufficient role' });
+    }
     next();
   };
 };
+
+module.exports = roleMiddleware;

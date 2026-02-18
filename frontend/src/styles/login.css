@@ -1,0 +1,199 @@
+/* Background Gradient */
+.brand-panel {
+  background: linear-gradient(135deg, #0a1f44, #142b5f);
+}
+
+/* Glass Effect */
+.bg-glass {
+  background: linear-gradient(135deg, #e9f0ff, #f8f9fa);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(15px);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+/* Logo */
+.logo-circle {
+  width: 60px;
+  height: 60px;
+  background: #142b5f;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+/* Animation */
+.fade-in {
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Premium Navy Gradient */
+.bg-navy-pro {
+  background: linear-gradient(90deg, #0a1f44, #142b5f);
+}
+
+/* Brand Logo */
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  background: white;
+  color: #142b5f;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: 0.3s ease;
+}
+
+.brand-logo:hover {
+  transform: rotate(-5deg) scale(1.05);
+}
+
+/* Brand Text */
+.brand-text {
+  letter-spacing: 0.5px;
+  font-size: 1.1rem;
+}
+
+/* Nav Hover */
+.nav-hover {
+  position: relative;
+  transition: 0.3s ease;
+}
+
+.nav-hover:hover {
+  color: #ffc107 !important;
+  transform: translateY(-2px);
+}
+
+/* Active Nav */
+.active-nav {
+  color: #ffc107 !important;
+  font-weight: 600;
+}
+
+.active-nav::after {
+  content: "";
+  display: block;
+  height: 2px;
+  background: #ffc107;
+  margin-top: 4px;
+}
+
+/* User Badge */
+.user-badge {
+  text-align: right;
+  color: white;
+}
+
+.role-text {
+  opacity: 0.7;
+  font-size: 0.75rem;
+}
+
+/* Smooth Navbar Animation */
+.navbar {
+  transition: all 0.3s ease-in-out;
+}
+
+
+
+/* Dashboard Background */
+.bg-dashboard {
+  background-color: #f4f6fa;
+  min-height: 100vh;
+}
+
+/* Smooth card hover */
+.card {
+  transition: all 0.25s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+
+
+
+.summary-card {
+  transition: 0.3s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+}
+
+.policy-row {
+  transition: 0.25s ease;
+}
+
+.policy-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+}
+
+.policy-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0a1f44, #142b5f);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+
+
+/* Gradient Summary Cards */
+.summary-gradient {
+  background: linear-gradient(135deg, #0a1f44, #142b5f);
+  border-radius: 12px;
+}
+
+.summary-gradient-success {
+  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  border-radius: 12px;
+}
+
+.summary-gradient-warning {
+  background: linear-gradient(135deg, #f57c00, #ff9800);
+  border-radius: 12px;
+}
+
+/* Policy Row Hover */
+.policy-row {
+  transition: 0.25s ease;
+}
+
+.policy-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* Header Strip */
+.bg-light {
+  background-color: #f8f9fa !important;
+}

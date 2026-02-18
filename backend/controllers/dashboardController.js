@@ -1,41 +1,32 @@
-const Policy = require("../models/Policy");
-const Claim = require("../models/Claim");
-const Treaty = require("../models/Treaty");
+const Policy = require('../models/Policy');
+const Claim = require('../models/Claim');
+const RiskAllocation = require('../models/RiskAllocation');
 
-exports.totalExposure = async (req, res) => {
-  const result = await Policy.aggregate([
-    { $group: { _id: null, exposure: { $sum: "$sumInsured" } } }
+// Get exposure by policy type
+exports.getExposureByType = async (req, res) => {
+  const exposure = await Policy.aggregate([
+    { $group: { _id: '$lineOfBusiness', totalExposure: { $sum: '$sumInsured' } } }
   ]);
-
-  res.json(result);
+  res.json(exposure);
 };
 
+// Get claims ratio
+exports.getClaimsRatio = async (req, res) => {
+  const totalClaims = await Claim.aggregate([
+    { $group: { _id: null, total: { $sum: '$claimAmount' } } }
+  ]);
+  const totalPremium = await Policy.aggregate([
+    { $group: { _id: null, total: { $sum: '$premium' } } }
+  ]);
+  const ratio = (totalClaims[0]?.total || 0) / (totalPremium[0]?.total || 1);
+  res.json({ claimsRatio: ratio });
+};
 
-exports.getSummary = async (req, res) => {
-  try {
-    const totalPolicies = await Policy.countDocuments();
-    const activePolicies = await Policy.countDocuments({ status: "ACTIVE" });
-
-    const totalClaims = await Claim.countDocuments();
-    const pendingClaims = await Claim.countDocuments({ status: "IN_REVIEW" });
-
-    const activeTreaties = await Treaty.countDocuments({ status: "ACTIVE" });
-
-    const exposureAgg = await Policy.aggregate([
-      { $group: { _id: null, totalExposure: { $sum: "$sumInsured" } } }
-    ]);
-
-    const totalExposure = exposureAgg[0]?.totalExposure || 0;
-
-    res.json({
-      totalPolicies,
-      activePolicies,
-      totalClaims,
-      pendingClaims,
-      activeTreaties,
-      totalExposure
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// Get reinsurer-wise risk distribution
+exports.getReinsurerRiskDistribution = async (req, res) => {
+  const distribution = await RiskAllocation.aggregate([
+    { $unwind: '$allocations' },
+    { $group: { _id: '$allocations.reinsurerId', totalAllocated: { $sum: '$allocations.allocatedAmount' } } }
+  ]);
+  res.json(distribution);
 };

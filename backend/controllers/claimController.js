@@ -1,208 +1,180 @@
-const Claim = require("../models/Claim");
-const Policy = require("../models/Policy");
+const Claim = require('../models/Claim');
+const Policy = require('../models/Policy');
+const { logAction } = require('../services/auditService');
 
-// ✅ Submit Claim (Customer / Agent)
+// Submit claim
 exports.createClaim = async (req, res) => {
-  try {
-    const claim = await Claim.create(req.body);
-
-    res.status(201).json({
-      success: true,
-      data: claim,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const { policyId, claimAmount, incidentDate, reportedDate, remarks } = req.body;
+  
+  // Validate claim against policy coverage
+  const policy = await Policy.findById(policyId);
+  if (!policy) {
+    return res.status(404).json({ message: 'Policy not found' });
   }
+  if (policy.status !== 'ACTIVE') {
+    return res.status(400).json({ message: 'Only ACTIVE policies can have claims filed' });
+  }
+  if (claimAmount > policy.sumInsured) {
+    return res.status(400).json({ message: `Claim amount ($${claimAmount}) cannot exceed policy coverage ($${policy.sumInsured})` });
+  }
+  
+  const claimNumber = 'CLM' + Date.now();
+  const claim = new Claim({
+    claimNumber,
+    policyId,
+    claimAmount,
+    status: 'SUBMITTED',
+    incidentDate,
+    reportedDate,
+    remarks,
+    handledBy: req.user._id
+  });
+  await claim.save();
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'CREATE',
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.status(201).json(claim);
 };
 
-// ✅ Get All Claims
-exports.getAllClaims = async (req, res) => {
-  try {
-    const claims = await Claim.find()
-      .populate("policyId")
-      .populate("handledBy", "username email");
-
-    res.status(200).json(claims);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+// Get all claims
+exports.getClaims = async (req, res) => {
+  const claims = await Claim.find().populate('policyId handledBy');
+  res.json(claims);
 };
 
-// ✅ Get Claim by ID
+// Get claim by ID
 exports.getClaimById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const claim = await Claim.findById(id)
-      .populate("policyId")
-      .populate("handledBy");
-
-    if (!claim) {
-      return res.status(404).json({ message: "Claim not found" });
-    }
-
-    res.status(200).json(claim);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const claim = await Claim.findById(req.params.id).populate('policyId handledBy');
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  res.json(claim);
 };
 
-// ✅ Move Claim to Review
+// Review claim (set IN_REVIEW)
 exports.reviewClaim = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const claim = await Claim.findById(id);
-
-    if (!claim) {
-      return res.status(404).json({ message: "Claim not found" });
-    }
-
-    claim.status = "IN_REVIEW";
-    claim.handledBy = req.user.id;
-
-    await claim.save();
-
-    res.json({ message: "Claim under review", claim });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const claim = await Claim.findById(req.params.id);
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  const oldValue = { ...claim.toObject() };
+  claim.status = 'IN_REVIEW';
+  await claim.save();
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'UPDATE',
+    oldValue,
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json(claim);
 };
 
-// ✅ Approve Claim
+// Approve claim
 exports.approveClaim = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const claim = await Claim.findById(id);
-    if (!claim) {
-      return res.status(404).json({ message: "Claim not found" });
-    }
-
-    if (claim.status !== "IN_REVIEW") {
-      return res.status(400).json({
-        message: "Claim must be in review before approval",
-      });
-    }
-
-    // Auto approve full claim amount
-    claim.status = "APPROVED";
-    claim.approvedAmount = claim.claimAmount;
-    claim.handledBy = req.user.id;
-
-    const oldData = { ...claim.toObject() };
-
-    claim.status = "APPROVED";
-    await claim.save();
-
-    await logAction({
-      entityType: "CLAIM",
-      entityId: claim._id,
-      action: "APPROVE",
-      oldValue: oldData,
-      newValue: claim,
-      user: req.user,
-      ip: req.ip,
-    });
-    await claim.save();
-
-    res.json({ message: "Claim approved", claim });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  const claim = await Claim.findById(req.params.id).populate('policyId');
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  if (claim.status !== 'IN_REVIEW') {
+    return res.status(400).json({ message: 'Only IN_REVIEW claims can be approved' });
   }
+  
+  const approvedAmount = req.body.approvedAmount || claim.claimAmount;
+  
+  // Validate approved amount doesn't exceed claim amount
+  if (approvedAmount > claim.claimAmount) {
+    return res.status(400).json({ message: `Approved amount ($${approvedAmount}) cannot exceed claim amount ($${claim.claimAmount})` });
+  }
+  
+  // Validate approved amount doesn't exceed policy coverage
+  if (approvedAmount > claim.policyId.sumInsured) {
+    return res.status(400).json({ message: `Approved amount ($${approvedAmount}) exceeds policy coverage ($${claim.policyId.sumInsured})` });
+  }
+  
+  const oldValue = { ...claim.toObject() };
+  claim.status = 'APPROVED';
+  claim.approvedAmount = approvedAmount;
+  await claim.save();
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'APPROVE',
+    oldValue,
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json(claim);
 };
 
-// ✅ Reject Claim
+// Reject claim
 exports.rejectClaim = async (req, res) => {
-  try {
-    // const { remarks } = req.body;
-
-    const { id } = req.params;
-    const claim = await Claim.findById(id);
-
-    if (!claim) {
-      return res.status(404).json({ message: "Claim not found" });
-    }
-
-    claim.status = "REJECTED";
-    // claim.remarks = remarks;
-    claim.handledBy = req.user.id;
-
-    await claim.save();
-
-    res.json({ message: "Claim rejected", claim });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  const claim = await Claim.findById(req.params.id);
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  const oldValue = { ...claim.toObject() };
+  claim.status = 'REJECTED';
+  await claim.save();
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'UPDATE',
+    oldValue,
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json(claim);
 };
 
-// ✅ Settle Claim
+// Settle claim
 exports.settleClaim = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // 1️⃣ Find claim
-    const claim = await Claim.findById(id);
-    if (!claim) {
-      return res.status(404).json({ message: "Claim not found" });
-    }
-
-    // Only APPROVED claims can be settled
-    if (claim.status !== "APPROVED") {
-      return res.status(400).json({
-        message: "Only approved claims can be settled",
-      });
-    }
-
-    // 2️⃣ Get related policy
-    const policy = await Policy.findById(claim.policyId);
-    if (!policy._id) {
-      return res.status(404).json({ message: "Policy not found" });
-    }
-    if (policy.status.toUpperCase() !== "ACTIVE") {
-      return res.status(400).json({
-        message: "Cannot settle claim. Policy is not active.",
-      });
-    }
-
-    // 3️⃣ Business Logic
-    let payout;
-
-    if (claim.claimAmount > policy.sumInsured) {
-      payout = policy.sumInsured;
-    } else {
-      payout = claim.claimAmount;
-    }
-
-    // 4️⃣ Update claim
-    claim.settlementAmount = payout;
-    claim.status = "SETTLED";
-    claim.settledAt = new Date();
-
-    await claim.save();
-
-    res.json({
-      message: "Claim settled successfully",
-      settlementAmount: payout,
-      claim,
-    });
-  } catch (error) {
-    console.error("Settlement error:", error);
-    res.status(500).json({ message: "Settlement failed" });
-  }
+  const claim = await Claim.findById(req.params.id);
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  const oldValue = { ...claim.toObject() };
+  claim.status = 'SETTLED';
+  await claim.save();
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'UPDATE',
+    oldValue,
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json(claim);
 };
-// exports.settleClaim = async (req, res) => {
-//   try {
-//     const claim = await Claim.findById(req.params.id);
 
-//     if (!claim) {
-//       return res.status(404).json({ message: "Claim not found" });
-//     }
+// Update claim
+exports.updateClaim = async (req, res) => {
+  const oldValue = await Claim.findById(req.params.id);
+  const claim = await Claim.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'UPDATE',
+    oldValue,
+    newValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json(claim);
+};
 
-//     claim.status = "SETTLED";
-
-//     await claim.save();
-
-//     res.json({ message: "Claim settled", claim });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+// Delete claim
+exports.deleteClaim = async (req, res) => {
+  const claim = await Claim.findByIdAndDelete(req.params.id);
+  if (!claim) return res.status(404).json({ message: 'Claim not found' });
+  await logAction({
+    entityType: 'CLAIM',
+    entityId: claim._id,
+    action: 'DELETE',
+    oldValue: claim,
+    performedBy: req.user._id,
+    ipAddress: req.ip
+  });
+  res.json({ message: 'Claim deleted' });
+};
